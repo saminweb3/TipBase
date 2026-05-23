@@ -15,7 +15,7 @@ export default function TipBase() {
   const { isConnected } = useAccount();
   const { writeContract } = useWriteContract();
 
-  // ←←← CHANGE THIS AFTER DEPLOYING YOUR CONTRACT ←←←
+  // ←←← CHANGE THIS AFTER DEPLOYING YOUR SMART CONTRACT ←←←
   const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   const sendTip = async () => {
