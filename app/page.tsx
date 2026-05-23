@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useState, useEffect } from 'react';
+import { useAccount, useWriteContract } from 'wagmi';
 import { parseEther } from 'viem';
 import { base } from 'viem/chains';
 
@@ -11,10 +11,15 @@ export default function TipBase() {
   const [message, setMessage] = useState('');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const { isConnected } = useAccount();
-  const { writeContract, data: hash } = useWriteContract();
-  const { isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { writeContract } = useWriteContract();
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // ←←← CHANGE THIS AFTER DEPLOYING YOUR CONTRACT ←←←
   const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -29,7 +34,7 @@ export default function TipBase() {
     setTxHash(null);
 
     try {
-      await writeContract({
+      const hash = await writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: [
           {
@@ -49,20 +54,18 @@ export default function TipBase() {
         chainId: base.id,
       });
 
-      // Wait a bit for hash to be available
-      setTimeout(() => {
-        if (hash) {
-          setTxHash(hash);
-          alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hash}`);
-        }
-      }, 2000);
-
+      setTxHash(hash);
+      alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hash}`);
     } catch (error: any) {
       console.error(error);
-      alert("Transaction failed. Make sure your wallet is connected and you have enough ETH for gas.");
+      alert("Transaction failed. Make sure your wallet is connected and you have enough ETH.");
     }
     setLoading(false);
   };
+
+  if (!mounted) {
+    return <div className="min-h-screen bg-black flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-5 max-w-md mx-auto">
