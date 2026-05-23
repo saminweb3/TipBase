@@ -11,17 +11,16 @@ export default function TipBase() {
   const [message, setMessage] = useState('');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const { isConnected } = useAccount();
-  const { writeContract, data: hashData } = useWriteContract();
+  const { writeContract } = useWriteContract();
 
   useEffect(() => {
-    setMounted(true);
+    setIsClient(true);
   }, []);
 
-  // ←←← CHANGE THIS AFTER DEPLOYING YOUR CONTRACT ←←←
-  const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
+  const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"; // Change later
 
   const sendTip = async () => {
     if (!recipient || !amount) {
@@ -33,7 +32,7 @@ export default function TipBase() {
     setTxHash(null);
 
     try {
-      await writeContract({
+      const hash = await writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: [
           {
@@ -53,27 +52,25 @@ export default function TipBase() {
         chainId: base.id,
       });
 
-      // Use hash from hook data
-      if (hashData) {
-        setTxHash(hashData);
-        alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hashData}`);
-      } else {
-        alert("Transaction submitted! Check your wallet for confirmation.");
-      }
+      setTxHash(hash);
+      alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hash}`);
     } catch (error: any) {
       console.error(error);
-      alert("Transaction failed or rejected. Please try again.");
+      alert("Transaction failed. Please check your wallet.");
     }
     setLoading(false);
   };
 
-  if (!mounted) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading TipBase...</div>;
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <p className="text-white">Loading TipBase...</p>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-black text-white p-5 max-w-md mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between py-6 border-b border-zinc-800">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-[#0052FF] rounded-2xl flex items-center justify-center">
@@ -97,7 +94,7 @@ export default function TipBase() {
       ) : (
         <div className="space-y-8 pt-8">
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Recipient (Basename or Address)</label>
+            <label className="block text-sm text-gray-400 mb-2">Recipient</label>
             <input
               type="text"
               placeholder="vitalik.base.eth or 0x..."
@@ -133,7 +130,7 @@ export default function TipBase() {
             disabled={loading}
             className="w-full bg-[#0052FF] hover:bg-blue-600 py-6 rounded-3xl text-2xl font-bold disabled:opacity-50"
           >
-            {loading ? "Sending Tip..." : `Send ${amount} ETH`}
+            {loading ? "Sending..." : `Send ${amount} ETH`}
           </button>
 
           {txHash && (
