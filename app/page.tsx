@@ -9,7 +9,7 @@ export default function TipBase() {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('0.001');
   const [message, setMessage] = useState('');
-  const [txHash, setTxHash] = useState('');
+  const [txHash, setTxHash] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { isConnected } = useAccount();
@@ -25,6 +25,8 @@ export default function TipBase() {
     }
 
     setLoading(true);
+    setTxHash(null);
+
     try {
       const hash = await writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
@@ -49,8 +51,8 @@ export default function TipBase() {
       setTxHash(hash);
       alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hash}`);
     } catch (error: any) {
-      alert("Transaction failed. Make sure your wallet is connected.");
       console.error(error);
+      alert("Transaction failed. Make sure your wallet is connected and you have enough ETH.");
     }
     setLoading(false);
   };
