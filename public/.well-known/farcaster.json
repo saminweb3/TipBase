@@ -1,0 +1,7 @@
+{
+  "name": "TipBase",
+  "icon": "https://tipbase.vercel.app/logo.png",
+  "description": "Send onchain tips easily using Basename or wallet address on Base",
+  "url": "https://tipbase.vercel.app",
+  "screenshot": "https://tipbase.vercel.app/screenshot.png"
+}
