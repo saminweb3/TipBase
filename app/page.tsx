@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract } from 'wagmi';
 import { parseUnits, isAddress } from 'viem';
 import { base } from 'viem/chains';
-import { normalize } from 'viem/ens';
 
 export default function TipBase() {
   const [recipientInput, setRecipientInput] = useState('');
@@ -16,7 +15,7 @@ export default function TipBase() {
   const [resolving, setResolving] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
   const { writeContract } = useWriteContract();
 
   useEffect(() => {
@@ -25,42 +24,32 @@ export default function TipBase() {
 
   const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
-  // Resolve Basename or Address
   const resolveRecipient = async (input: string) => {
     if (!input) return null;
-
     setResolving(true);
 
     try {
-      // If it's already a valid address
       if (isAddress(input)) {
         setResolvedAddress(input);
         setResolving(false);
         return input;
       }
 
-      // If it ends with .base.eth
-      if (input.endsWith('.base.eth') || input.endsWith('.basetest.eth')) {
-        const normalized = normalize(input);
-        // Use viem ENS resolver (works for Basenames on Base)
-        const resolved = await fetch(`https://ens-resolver.base.org/${normalized}`)
-          .then(res => res.json())
-          .then(data => data.address);
-
-        if (resolved) {
-          setResolvedAddress(resolved);
+      if (input.endsWith('.base.eth')) {
+        const response = await fetch(`https://ens-resolver.base.org/${input}`);
+        const data = await response.json();
+        if (data.address) {
+          setResolvedAddress(data.address);
           setResolving(false);
-          return resolved;
+          return data.address;
         }
       }
 
-      alert("Could not resolve this name. Please use a valid Basename or wallet address.");
-      setResolvedAddress(null);
+      alert("Could not resolve this Basename. Please use a valid .base.eth or 0x address.");
       setResolving(false);
       return null;
     } catch (error) {
-      console.error(error);
-      alert("Failed to resolve name. Please try again.");
+      alert("Failed to resolve name.");
       setResolving(false);
       return null;
     }
@@ -99,16 +88,16 @@ export default function TipBase() {
       });
 
       setTxHash(hash);
-      alert(`✅ ${amount} USDC sent to ${recipientInput} successfully!\n\nTx: ${hash}`);
+      alert(`✅ ${amount} USDC sent successfully to ${recipientInput}`);
     } catch (error: any) {
       console.error(error);
-      alert("Transaction failed. Make sure you approved USDC and have enough balance.");
+      alert("Transaction failed. Please check your USDC balance.");
     }
     setLoading(false);
   };
 
   if (!isClient) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading TipBase...</div>;
   }
 
   return (
@@ -118,7 +107,7 @@ export default function TipBase() {
           <div className="w-12 h-12 bg-[#0052FF] rounded-2xl flex items-center justify-center">💙</div>
           <h1 className="text-4xl font-bold">TipBase</h1>
         </div>
-        <div className="text-sm text-green-400 font-medium">USDC</div>
+        <div className="text-green-400">USDC</div>
       </div>
 
       {!isConnected ? (
@@ -127,13 +116,14 @@ export default function TipBase() {
           <p className="text-gray-400 mb-10">Send USDC tips using Basename or address</p>
           <button 
             onClick={() => window.location.reload()}
-            className="w-full bg-[#0052FF] hover:bg-blue-600 py-5 rounded-3xl text-xl font-semibold"
+            className="w-full bg-[#0052FF] py-5 rounded-3xl text-xl font-semibold"
           >
             Connect Base Profile
           </button>
         </div>
       ) : (
         <div className="space-y-8 pt-8">
+          {/* Input fields same as before */}
           <div>
             <label className="block text-sm text-gray-400 mb-2">Recipient</label>
             <input
@@ -141,11 +131,8 @@ export default function TipBase() {
               placeholder="vitalik.base.eth or 0x..."
               value={recipientInput}
               onChange={(e) => setRecipientInput(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-3xl p-5 text-lg focus:border-[#0052FF]"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-3xl p-5 text-lg"
             />
-            {resolvedAddress && (
-              <p className="text-xs text-green-400 mt-2">✓ Resolved to: {resolvedAddress.slice(0,6)}...{resolvedAddress.slice(-4)}</p>
-            )}
           </div>
 
           <div>
@@ -155,34 +142,27 @@ export default function TipBase() {
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-3xl p-5 text-lg focus:border-[#0052FF]"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-3xl p-5 text-lg"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Message (optional)</label>
+            <label className="block text-sm text-gray-400 mb-2">Message</label>
             <textarea
-              placeholder="Thank you for your support!"
+              placeholder="Thank you!"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-3xl p-5 h-28 focus:border-[#0052FF]"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-3xl p-5 h-28"
             />
           </div>
 
           <button
             onClick={sendTip}
             disabled={loading || resolving}
-            className="w-full bg-[#0052FF] hover:bg-blue-600 py-6 rounded-3xl text-2xl font-bold disabled:opacity-50"
+            className="w-full bg-[#0052FF] py-6 rounded-3xl text-2xl font-bold disabled:opacity-50"
           >
-            {loading ? "Sending..." : resolving ? "Resolving Name..." : `Send ${amount} USDC`}
+            {loading ? "Sending..." : `Send ${amount} USDC`}
           </button>
-
-          {txHash && (
-            <div className="bg-green-900/30 border border-green-500 p-6 rounded-3xl text-center">
-              <p className="text-green-400 text-lg">✅ Tip Sent Successfully!</p>
-              <p className="text-xs text-gray-400 mt-3 break-all">Tx: {txHash}</p>
-            </div>
-          )}
         </div>
       )}
     </div>
