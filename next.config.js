@@ -3,12 +3,8 @@ const nextConfig = {
   reactStrictMode: false,
   swcMinify: true,
 
-  // Static Export for Vercel
-  output: 'export',
-  trailingSlash: true,
-  images: {
-    unoptimized: true,
-  },
+  // Remove static export for now
+  // output: 'export',   ← Commented out
 
   webpack: (config) => {
     config.resolve.fallback = {
