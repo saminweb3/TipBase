@@ -14,9 +14,8 @@ export default function TipBase() {
   const [mounted, setMounted] = useState(false);
 
   const { isConnected } = useAccount();
-  const { writeContract } = useWriteContract();
+  const { writeContract, data: hashData } = useWriteContract();
 
-  // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -34,7 +33,7 @@ export default function TipBase() {
     setTxHash(null);
 
     try {
-      const hash = await writeContract({
+      await writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: [
           {
@@ -54,17 +53,22 @@ export default function TipBase() {
         chainId: base.id,
       });
 
-      setTxHash(hash);
-      alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hash}`);
+      // Use hash from hook data
+      if (hashData) {
+        setTxHash(hashData);
+        alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hashData}`);
+      } else {
+        alert("Transaction submitted! Check your wallet for confirmation.");
+      }
     } catch (error: any) {
       console.error(error);
-      alert("Transaction failed. Make sure your wallet is connected and you have enough ETH.");
+      alert("Transaction failed or rejected. Please try again.");
     }
     setLoading(false);
   };
 
   if (!mounted) {
-    return <div className="min-h-screen bg-black flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading TipBase...</div>;
   }
 
   return (
