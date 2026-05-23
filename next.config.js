@@ -1,25 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,        // Helps avoid hydration issues
+  reactStrictMode: false,
   swcMinify: true,
   
-  // Important for Vercel + Wagmi apps
+  output: 'export',           // Static export
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+
   webpack: (config) => {
     config.resolve.fallback = {
-      ...config.resolve.fallback,
       fs: false,
       net: false,
       tls: false,
     };
     return config;
-  },
-
-  // Allow static export (helps with some build issues)
-  output: 'export',
-  trailingSlash: true,
-
-  images: {
-    unoptimized: true,   // Important for static export
   },
 };
 
