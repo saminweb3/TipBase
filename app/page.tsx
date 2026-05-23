@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useWriteContract } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { base } from 'viem/chains';
 
@@ -13,9 +13,10 @@ export default function TipBase() {
   const [loading, setLoading] = useState(false);
 
   const { isConnected } = useAccount();
-  const { writeContract } = useWriteContract();
+  const { writeContract, data: hash } = useWriteContract();
+  const { isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  // ←←← CHANGE THIS AFTER DEPLOYING YOUR SMART CONTRACT ←←←
+  // ←←← CHANGE THIS AFTER DEPLOYING YOUR CONTRACT ←←←
   const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   const sendTip = async () => {
@@ -28,7 +29,7 @@ export default function TipBase() {
     setTxHash(null);
 
     try {
-      const hash = await writeContract({
+      await writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: [
           {
@@ -48,11 +49,17 @@ export default function TipBase() {
         chainId: base.id,
       });
 
-      setTxHash(hash);
-      alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hash}`);
+      // Wait a bit for hash to be available
+      setTimeout(() => {
+        if (hash) {
+          setTxHash(hash);
+          alert(`✅ Tip sent successfully!\n\nTransaction Hash:\n${hash}`);
+        }
+      }, 2000);
+
     } catch (error: any) {
       console.error(error);
-      alert("Transaction failed. Make sure your wallet is connected and you have enough ETH.");
+      alert("Transaction failed. Make sure your wallet is connected and you have enough ETH for gas.");
     }
     setLoading(false);
   };
